@@ -1,0 +1,97 @@
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "WINEX TOOLKIT"
+$form.Size = '700,500'
+$form.StartPosition = "CenterScreen"
+$form.BackColor = "Black"
+$form.ForeColor = "White"
+$font = New-Object System.Drawing.Font("Consolas", 12, [System.Drawing.FontStyle]::Bold)
+$form.Font = $font
+
+$activateBtn = New-Object System.Windows.Forms.Button
+$activateBtn.Text = "[ACTIVATE]"
+$activateBtn.Size = '140,40'
+$activateBtn.Location = '100,40'
+$activateBtn.BackColor = "Black"
+$activateBtn.ForeColor = "LimeGreen"
+$activateBtn.Font = $font
+
+$uninstallBtn = New-Object System.Windows.Forms.Button
+$uninstallBtn.Text = "[UNINSTALL]"
+$uninstallBtn.Size = '140,40'
+$uninstallBtn.Location = '460,40'
+$uninstallBtn.BackColor = "Black"
+$uninstallBtn.ForeColor = "Cyan"
+$uninstallBtn.Font = $font
+
+$statusLabel = New-Object System.Windows.Forms.Label
+$statusLabel.Text = ""
+$statusLabel.Size = '660,30'
+$statusLabel.Location = '20,100'
+$statusLabel.ForeColor = 'White'
+$statusLabel.Font = $font
+
+$progress = New-Object System.Windows.Forms.ProgressBar
+$progress.Location = '20,140'
+$progress.Size = '660,20'
+$progress.Style = 'Continuous'
+$progress.Value = 0
+
+$logBox = New-Object System.Windows.Forms.RichTextBox
+$logBox.Location = '20,180'
+$logBox.Size = '660,260'
+$logBox.BackColor = 'Black'
+$logBox.ForeColor = 'White'
+$logBox.Font = $font
+$logBox.ReadOnly = $true
+
+$form.Controls.Add($activateBtn)
+$form.Controls.Add($uninstallBtn)
+$form.Controls.Add($statusLabel)
+$form.Controls.Add($progress)
+$form.Controls.Add($logBox)
+
+$activateBtn.Add_Click({
+    $statusLabel.Text = "POWERSHELL IS MAKING THE CHANGES..."
+    $form.Refresh()
+    Start-Sleep -Milliseconds 500
+
+    for ($i = 1; $i -le 100; $i += 20) {
+        $progress.Value = $i
+        Start-Sleep -Milliseconds 300
+    }
+
+    $logBox.Clear()
+    $logBox.AppendText("=== WINEX V7 HARDENING STARTED ===`n")
+    $output = powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\WinEx-V7.ps1" 2>&1
+    foreach ($line in $output) {
+        $logBox.AppendText("$line`n")
+        $logBox.ScrollToCaret()
+        Start-Sleep -Milliseconds 100
+    }
+
+    $progress.Value = 100
+    $statusLabel.Text = "OPERATION SUCCESSFULLY COMPLETED - REBOOT RECOMMENDED"
+    $form.Refresh()
+    Start-Sleep -Seconds 5
+    $form.Close()
+})
+
+$uninstallBtn.Add_Click({
+    $statusLabel.Text = "UNINSTALLING WINEX TOOLKIT..."
+    $form.Refresh()
+    Start-Sleep -Seconds 1
+
+    Remove-Item "$PSScriptRoot\WinEx.exe" -Force -ErrorAction SilentlyContinue
+    Remove-Item "$PSScriptRoot\WinExSuite.ps1" -Force -ErrorAction SilentlyContinue
+    Remove-Item "$PSScriptRoot\WinEx-V7.ps1" -Force -ErrorAction SilentlyContinue
+
+    $statusLabel.Text = "UNINSTALL COMPLETE - FILES REMOVED"
+    $form.Refresh()
+    Start-Sleep -Seconds 5
+    $form.Close()
+})
+
+$form.ShowDialog()
